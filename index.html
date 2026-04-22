@@ -803,7 +803,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="hora">Hora</label>
-                                <input type="time" id="hora" required>
+                                <input type="text" id="hora" placeholder="12:00 PM" required>
                             </div>
                             <div class="form-group">
                                 <label for="precio">Precio (€)</label>
@@ -1139,9 +1139,11 @@
 
         function setHoraActual() {
             const now = new Date();
-            const horas = String(now.getHours()).padStart(2, '0');
-            const minutos = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('hora').value = `${horas}:${minutos}`;
+            document.getElementById('hora').value = now.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }).toUpperCase();
         }
 
         function registrarVenta() {
@@ -2748,7 +2750,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="hora">Hora</label>
-                                <input type="time" id="hora" required>
+                                <input type="text" id="hora" placeholder="12:00 PM" required>
                             </div>
                             <div class="form-group">
                                 <label for="precio">Precio (€)</label>
@@ -3084,9 +3086,11 @@
 
         function setHoraActual() {
             const now = new Date();
-            const horas = String(now.getHours()).padStart(2, '0');
-            const minutos = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('hora').value = `${horas}:${minutos}`;
+            document.getElementById('hora').value = now.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }).toUpperCase();
         }
 
         function registrarVenta() {
