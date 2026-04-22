@@ -803,7 +803,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="hora">Hora</label>
-                                <input type="time" id="hora" required>
+                                <input type="text" id="hora" readonly style="background:#fafaf8;">
                             </div>
                             <div class="form-group">
                                 <label for="precio">Precio (€)</label>
@@ -2748,7 +2748,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="hora">Hora</label>
-                                <input type="time" id="hora" required>
+                                <input type="text" id="hora" readonly style="background:#fafaf8;">
                             </div>
                             <div class="form-group">
                                 <label for="precio">Precio (€)</label>
@@ -3083,12 +3083,13 @@
         });
 
         function setHoraActual() {
-            const now = new Date();
-            const horas = String(now.getHours()).padStart(2, '0');
-            const minutos = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('hora').value = `${horas}:${minutos}`;
-        }
-
+    const now = new Date();
+    let h = now.getHours();
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    document.getElementById('hora').value = h + ':' + m + ' ' + ampm;
+}
         function registrarVenta() {
             const barberoId = document.getElementById('barbero').value;
             const servicioId = document.getElementById('servicio').value;
