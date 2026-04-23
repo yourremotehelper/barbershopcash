@@ -535,14 +535,31 @@ var registros = [];
 function cargarDatos() {
     try {
         barberos  = JSON.parse(localStorage.getItem('barberos_v2'))  || [
-            {id:1, nombre:'Jean Carlos'},
-            {id:2, nombre:'Sergio'}
+            {id:1, nombre:'Jean Carlos Hernandez'},
+            {id:2, nombre:'Luis Fernando Ibarra'},
+            {id:3, nombre:'Sergio Yeufrandi Martínez'}
         ];
         servicios = JSON.parse(localStorage.getItem('servicios_v2')) || [
-            {id:1, nombre:'Corte de cabello', precio:15},
-            {id:2, nombre:'Barba', precio:10},
-            {id:3, nombre:'Corte + Barba', precio:22},
-            {id:4, nombre:'Degradado', precio:18}
+            {id:1,  nombre:'Corte degradado',                    precio:12},
+            {id:2,  nombre:'Corte y barba',                      precio:20},
+            {id:3,  nombre:'Corte y rayas',                      precio:15},
+            {id:4,  nombre:'Corte y cejas',                      precio:15},
+            {id:5,  nombre:'Afeitado de barba',                  precio:8},
+            {id:6,  nombre:'Corte niños menos 6 años',           precio:8},
+            {id:7,  nombre:'Corte niños',                        precio:12},
+            {id:8,  nombre:'Corte de jubilados',                 precio:8},
+            {id:9,  nombre:'Corte y barba pequeña',              precio:17},
+            {id:10, nombre:'Servicio premium',                   precio:30},
+            {id:11, nombre:'Corte cejas',                        precio:4},
+            {id:12, nombre:'Mechas',                             precio:35},
+            {id:13, nombre:'Decoración completa',                precio:45},
+            {id:14, nombre:'Semilla permanente',                 precio:35},
+            {id:15, nombre:'Tinte colores fantasía',             precio:45},
+            {id:16, nombre:'Corte con limpieza facial',          precio:25},
+            {id:17, nombre:'Corte y lavado',                     precio:15},
+            {id:18, nombre:'Limpieza facial',                    precio:15},
+            {id:19, nombre:'Corte pelo barba mechas plateadas',  precio:62},
+            {id:20, nombre:'Corte de pelo y barba con vapor',    precio:25}
         ];
         registros = JSON.parse(localStorage.getItem('registros_v2')) || [];
     } catch(e) {
