@@ -406,7 +406,10 @@
 
         <!-- Tabla del día -->
         <div class="card">
-            <h2>Registros de hoy</h2>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h2 style="margin-bottom:0;">Registros de hoy</h2>
+                <button id="btnOrden" class="btn-small" onclick="toggleOrden()" style="font-size:0.85em;padding:8px 14px;">🕐 Más recientes primero</button>
+            </div>
             <div class="table-wrap">
                 <table>
                     <thead>
@@ -820,9 +823,22 @@ async function eliminarRegistro(id) {
 // ═══════════════════════════════════════════════
 // RENDER: TABLA HOY + TOTALES RÁPIDOS
 // ═══════════════════════════════════════════════
+var ordenDesc = true; // true = más recientes primero
+
+function toggleOrden() {
+    ordenDesc = !ordenDesc;
+    var btn = document.getElementById('btnOrden');
+    if (btn) btn.textContent = ordenDesc ? '🕐 Más recientes primero' : '🕐 Más antiguos primero';
+    renderRegistroHoy();
+}
+
 function renderRegistroHoy() {
     var hoy = hoyISO();
     var regsHoy = registros.filter(function(r){ return r.fecha === hoy; });
+    regsHoy.sort(function(a,b){
+        var cmp = (a.hora||'').localeCompare(b.hora||'');
+        return ordenDesc ? -cmp : cmp;
+    });
     var tbody = document.getElementById('registrosBody');
     if (!tbody) return;
     tbody.innerHTML = '';
