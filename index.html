@@ -835,8 +835,30 @@ function toggleOrden() {
 function renderRegistroHoy() {
     var hoy = hoyISO();
     var regsHoy = registros.filter(function(r){ return r.fecha === hoy; });
+    function horaA24(h) {
+        if (!h) return 0;
+        var parts = h.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (!parts) return 0;
+        var hh = parseInt(parts[1]);
+        var mm = parseInt(parts[2]);
+        var ampm = parts[3].toUpperCase();
+        if (ampm === 'PM' && hh !== 12) hh += 12;
+        if (ampm === 'AM' && hh === 12) hh = 0;
+        return hh * 60 + mm;
+    }
+    function horaA24(h) {
+        if (!h) return 0;
+        var parts = h.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (!parts) return 0;
+        var hh = parseInt(parts[1]);
+        var mm = parseInt(parts[2]);
+        var ampm = parts[3].toUpperCase();
+        if (ampm === 'PM' && hh !== 12) hh += 12;
+        if (ampm === 'AM' && hh === 12) hh = 0;
+        return hh * 60 + mm;
+    }
     regsHoy.sort(function(a,b){
-        var cmp = (a.hora||'').localeCompare(b.hora||'');
+        var cmp = horaA24(a.hora) - horaA24(b.hora);
         return ordenDesc ? -cmp : cmp;
     });
     var tbody = document.getElementById('registrosBody');
