@@ -436,6 +436,37 @@
             <button class="btn-small" onclick="descargarCSVSemanal()" style="background:var(--success);color:white;padding:12px 18px;">📥 Semana — Google Sheets</button>
             <button class="btn-small" onclick="descargarPDFSemanal()" style="background:var(--primary);color:white;padding:12px 18px;">📄 Semana — PDF</button>
         </div>
+        <!-- Filtro por fechas -->
+<div class="card" style="margin-bottom:20px;">
+    <h2 style="margin-bottom:16px;">📅 Filtro por fechas</h2>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group" style="margin-bottom:0;flex:1;min-width:140px;">
+            <label for="filtroDesde">Desde</label>
+            <input type="date" id="filtroDesde">
+        </div>
+        <div class="form-group" style="margin-bottom:0;flex:1;min-width:140px;">
+            <label for="filtroHasta">Hasta</label>
+            <input type="date" id="filtroHasta">
+        </div>
+        <button class="btn-small" onclick="aplicarFiltro()" style="padding:11px 18px;height:44px;">🔍 Filtrar</button>
+        <button class="btn-small" onclick="limpiarFiltro()" style="padding:11px 18px;height:44px;background:#888;">✕ Limpiar</button>
+    </div>
+    <div id="filtroResultados" style="margin-top:20px;display:none;">
+        <div id="filtroStats" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+            <button class="btn-small" onclick="descargarFiltroCSV()" style="background:var(--success);color:white;">📊 Descargar Excel/Sheets</button>
+            <button class="btn-small" onclick="descargarFiltroPDF()" style="background:var(--primary);color:white;">📄 Descargar PDF</button>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Fecha</th><th>Barbero</th><th>Servicio</th><th>Hora</th><th>Pago</th><th>Precio</th></tr>
+                </thead>
+                <tbody id="filtroBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
         <div class="card">
             <h2>Últimos 20 registros</h2>
@@ -1279,6 +1310,138 @@ async function eliminarServicio(id) {
 // ═══════════════════════════════════════════════
 // DESCARGAS SEMANA
 // ═══════════════════════════════════════════════
+    // ═══════════════════════════════════════════════
+// FILTRO POR FECHAS
+// ═══════════════════════════════════════════════
+var registrosFiltrados = [];
+
+function aplicarFiltro() {
+    var desde = document.getElementById('filtroDesde').value;
+    var hasta = document.getElementById('filtroHasta').value;
+    if (!desde || !hasta) { notif('Selecciona las dos fechas', 'error'); return; }
+    if (desde > hasta) { notif('La fecha de inicio debe ser anterior a la final', 'error'); return; }
+
+    registrosFiltrados = registros.filter(function(r){ return r.fecha >= desde && r.fecha <= hasta; });
+    registrosFiltrados.sort(function(a,b){ return (a.fecha+a.hora).localeCompare(b.fecha+b.hora); });
+
+    var div = document.getElementById('filtroResultados');
+    var tbody = document.getElementById('filtroBody');
+    var statsDiv = document.getElementById('filtroStats');
+    div.style.display = 'block';
+
+    if (registrosFiltrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:20px;">Sin registros en ese rango de fechas</td></tr>';
+        statsDiv.innerHTML = '';
+        return;
+    }
+
+    var total = registrosFiltrados.reduce(function(s,r){ return s+r.precio; }, 0);
+    var ef = registrosFiltrados.filter(function(r){ return r.metodoPago==='efectivo'; }).reduce(function(s,r){ return s+r.precio; }, 0);
+    var ta = registrosFiltrados.filter(function(r){ return r.metodoPago==='tarjeta'; }).reduce(function(s,r){ return s+r.precio; }, 0);
+    var bz = registrosFiltrados.filter(function(r){ return r.metodoPago==='bizum'; }).reduce(function(s,r){ return s+r.precio; }, 0);
+    var desdeF = new Date(desde+'T12:00').toLocaleDateString('es-ES');
+    var hastaF = new Date(hasta+'T12:00').toLocaleDateString('es-ES');
+
+    statsDiv.innerHTML = '<span style="background:#f5f1ed;padding:7px 14px;border-radius:6px;font-size:.88em;color:var(--text-light);">'+desdeF+' — '+hastaF+'</span>'
+        + '<span style="background:#e8f5e9;color:#2e7d32;padding:7px 14px;border-radius:6px;font-weight:600;font-size:.88em;">💵 Efectivo: '+fmt(ef)+'</span>'
+        + '<span style="background:#e3f2fd;color:#1565c0;padding:7px 14px;border-radius:6px;font-weight:600;font-size:.88em;">💳 Tarjeta: '+fmt(ta)+'</span>'
+        + '<span style="background:#f3e5f5;color:#6a1b9a;padding:7px 14px;border-radius:6px;font-weight:600;font-size:.88em;">📱 Bizum: '+fmt(bz)+'</span>'
+        + '<span style="background:var(--primary);color:white;padding:7px 14px;border-radius:6px;font-weight:600;font-size:.88em;">Total: '+fmt(total)+'</span>'
+        + '<span style="background:#f5f1ed;color:var(--text-light);padding:7px 14px;border-radius:6px;font-size:.88em;">'+registrosFiltrados.length+' servicios</span>';
+
+    tbody.innerHTML = '';
+    registrosFiltrados.forEach(function(r) {
+        var pi = pagoInfo(r.metodoPago);
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>'+fechaStr(r.fecha)+'</td>'
+            + '<td>'+r.barbero+'</td>'
+            + '<td>'+r.servicio+'</td>'
+            + '<td>'+r.hora+'</td>'
+            + '<td><span class="badge '+pi.cls+'">'+pi.label+'</span></td>'
+            + '<td>'+fmt(r.precio)+'</td>';
+        tbody.appendChild(tr);
+    });
+
+    notif('✓ '+registrosFiltrados.length+' registros encontrados');
+}
+
+function limpiarFiltro() {
+    document.getElementById('filtroDesde').value = '';
+    document.getElementById('filtroHasta').value = '';
+    document.getElementById('filtroResultados').style.display = 'none';
+    registrosFiltrados = [];
+}
+
+function descargarFiltroCSV() {
+    if (!registrosFiltrados.length) { notif('Aplica el filtro primero', 'error'); return; }
+    var desde = document.getElementById('filtroDesde').value;
+    var hasta = document.getElementById('filtroHasta').value;
+    var BOM = '\uFEFF';
+    var cab = 'Fecha;Barbero;Servicio;Hora;Método de pago;Precio (€)\n';
+    var filas = registrosFiltrados.map(function(r){
+        var p = r.metodoPago==='tarjeta'?'Tarjeta':r.metodoPago==='bizum'?'Bizum':'Efectivo';
+        return fechaStr(r.fecha)+';'+r.barbero+';'+r.servicio+';'+r.hora+';'+p+';'+r.precio.toFixed(2);
+    }).join('\n');
+    var vistos={}, barbs=[];
+    registrosFiltrados.forEach(function(r){ if(!vistos[r.barbero]){vistos[r.barbero]=true;barbs.push(r.barbero);} });
+    barbs.sort();
+    var res = '\n\nRESUMEN POR BARBERO\nBarbero;Efectivo;Tarjeta;Bizum;Total;Servicios\n';
+    barbs.forEach(function(b){
+        var br = registrosFiltrados.filter(function(r){ return r.barbero===b; });
+        var ef = br.filter(function(r){ return r.metodoPago==='efectivo'; }).reduce(function(s,r){ return s+r.precio; },0);
+        var ta = br.filter(function(r){ return r.metodoPago==='tarjeta'; }).reduce(function(s,r){ return s+r.precio; },0);
+        var bz = br.filter(function(r){ return r.metodoPago==='bizum'; }).reduce(function(s,r){ return s+r.precio; },0);
+        var to = br.reduce(function(s,r){ return s+r.precio; },0);
+        res += b+';'+ef.toFixed(2)+';'+ta.toFixed(2)+';'+bz.toFixed(2)+';'+to.toFixed(2)+';'+br.length+'\n';
+    });
+    var total = registrosFiltrados.reduce(function(s,r){ return s+r.precio; },0);
+    res += '\nTOTAL PERÍODO;;;;'+total.toFixed(2)+';'+registrosFiltrados.length;
+    var blob = new Blob([BOM+cab+filas+res], {type:'text/csv;charset=utf-8;'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'barberia-'+desde+'-a-'+hasta+'.csv';
+    a.click();
+    notif('✓ CSV descargado');
+}
+
+function descargarFiltroPDF() {
+    if (!registrosFiltrados.length) { notif('Aplica el filtro primero', 'error'); return; }
+    var desde = document.getElementById('filtroDesde').value;
+    var hasta = document.getElementById('filtroHasta').value;
+    var desdeF = new Date(desde+'T12:00').toLocaleDateString('es-ES');
+    var hastaF = new Date(hasta+'T12:00').toLocaleDateString('es-ES');
+    var vistos={}, barbs=[];
+    registrosFiltrados.forEach(function(r){ if(!vistos[r.barbero]){vistos[r.barbero]=true;barbs.push(r.barbero);} });
+    barbs.sort();
+    var totalG = registrosFiltrados.reduce(function(s,r){ return s+r.precio; },0);
+    var tablas = barbs.map(function(b){
+        var br = registrosFiltrados.filter(function(r){ return r.barbero===b; });
+        var ef = br.filter(function(r){ return r.metodoPago==='efectivo'; }).reduce(function(s,r){ return s+r.precio; },0);
+        var ta = br.filter(function(r){ return r.metodoPago==='tarjeta'; }).reduce(function(s,r){ return s+r.precio; },0);
+        var bz = br.filter(function(r){ return r.metodoPago==='bizum'; }).reduce(function(s,r){ return s+r.precio; },0);
+        var to = br.reduce(function(s,r){ return s+r.precio; },0);
+        var filas = br.map(function(r){
+            var p = r.metodoPago==='tarjeta'?'Tarjeta':r.metodoPago==='bizum'?'Bizum':'Efectivo';
+            return '<tr><td>'+fechaStr(r.fecha)+'</td><td>'+r.servicio+'</td><td>'+r.hora+'</td><td>'+p+'</td><td style="text-align:right">€'+r.precio.toFixed(2)+'</td></tr>';
+        }).join('');
+        filas += '<tr style="background:#f5f1ed;font-weight:bold;border-top:2px solid #d4a574"><td colspan="4" style="text-align:right;color:#666">TOTAL</td><td style="text-align:right;color:#d4a574">€'+to.toFixed(2)+'</td></tr>';
+        return '<h3 style="margin:22px 0 8px">✂️ '+b+'</h3>'
+            +'<div style="font-size:.88em;color:#555;margin-bottom:8px">Efectivo: <strong>€'+ef.toFixed(2)+'</strong> | Tarjeta: <strong>€'+ta.toFixed(2)+'</strong> | Bizum: <strong>€'+bz.toFixed(2)+'</strong> | Total: <strong>€'+to.toFixed(2)+'</strong> | Servicios: <strong>'+br.length+'</strong></div>'
+            +'<table style="width:100%;border-collapse:collapse;font-size:.86em"><thead style="background:#1a1a2e;color:white"><tr><th style="padding:8px;text-align:left">Fecha</th><th style="padding:8px;text-align:left">Servicio</th><th style="padding:8px;text-align:left">Hora</th><th style="padding:8px;text-align:left">Pago</th><th style="padding:8px;text-align:right">Precio</th></tr></thead><tbody>'+filas+'</tbody></table>';
+    }).join('');
+    var win = window.open('','','height=800,width=900');
+    var html = '<!DOCTYPE html><html><head><title>Barbería '+desdeF+' - '+hastaF+'</title>'
+        +'<style>body{font-family:Segoe UI,sans-serif;padding:30px;color:#1a1a1a}td{padding:7px 10px;border-bottom:1px solid #eee}</style>'
+        +'</head><body>'
+        +'<h1 style="color:#d4a574">✂️ Brabus Barber Shop</h1>'
+        +'<p>Período: <strong>'+desdeF+'</strong> al <strong>'+hastaF+'</strong></p>'
+        +'<div style="background:#f5f1ed;padding:14px;border-radius:8px;margin:14px 0">Total: <strong style="color:#d4a574;font-size:1.2em">€'+totalG.toFixed(2)+'</strong> | Registros: <strong>'+registrosFiltrados.length+'</strong></div>'
+        +tablas
+        +'<scr'+'ipt>window.onload=function(){window.print();}<'+'/scr'+'ipt>'
+        +'</body></html>';
+    win.document.write(html);
+    win.document.close();
+}
 function descargarCSVSemanal() {
     var ini = inicioSemanaISO();
     var regs = registros.filter(function(r){ return r.fecha >= ini; });
